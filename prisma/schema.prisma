@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UsuarioEstado {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+  ELIMINADO
+}
+
+model Usuarios {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  google_id       String        @unique
+  email           String        @unique
+  username        String?       @unique
+  nombre          String
+  fecha_nacimiento DateTime?
+  foto_perfil     String?
+  fecha_registro  DateTime      @default(now()) @db.Timestamptz
+  estado          UsuarioEstado @default(ACTIVO)
+
+  @@map("usuarios")
+}

@@ -1,24 +1,28 @@
-import 'reflect-metadata';
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-
-// Importar rutas (cuando las creemos)
-// import routes from './routes';
+import session from 'express-session';
+import passport from './config/passport';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 
 // Middlewares
-app.use(cors());
-app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Rutas base
-app.get('/health', (req, res) => {
-    res.status(200).send('Server is running');
-});
+// Session middleware
+app.use(
+  session({
+    secret: process.env.JWT_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-// Cuando tengamos las rutas:
-// app.use('/api', routes);
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Routes
+app.use('/auth', authRoutes);
 
 export default app;
