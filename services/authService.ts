@@ -1,3 +1,4 @@
+// services/authService.ts
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
@@ -7,38 +8,24 @@ export class AuthService {
   async findOrCreateUser(googleProfile: any) {
     try {
       const { id: googleId, emails, displayName, photos } = googleProfile;
+      const photoUrl = photos?.[0]?.value || null;
       
-      console.log('Google Profile:', {
-        googleId,
-        email: emails?.[0]?.value,
-        displayName,
-        photoUrl: photos?.[0]?.value
-      });
-
-      // Primero buscar si el usuario existe
       let user = await prisma.usuarios.findFirst({
         where: { 
           google_id: googleId 
         }
       });
 
-      console.log('Usuario existente:', user);
-
-      // Si no existe, crear nuevo usuario
       if (!user) {
-        console.log('Creando nuevo usuario...');
-        
         user = await prisma.usuarios.create({
           data: {
             google_id: googleId,
             email: emails[0].value,
             nombre: displayName,
-            foto_perfil: photos?.[0]?.value || null,
+            foto_perfil: photoUrl,
             estado: 'ACTIVO'
           }
         });
-
-        console.log('Usuario creado:', user);
       }
 
       return user;
@@ -48,28 +35,17 @@ export class AuthService {
     }
   }
 
-  async findUserById(id: string) {
-    try {
-      const user = await prisma.usuarios.findUnique({
-        where: { id }
-      });
-      
-      if (!user) {
-        throw new Error('Usuario no encontrado');
-      }
-      
-      return user;
-    } catch (error) {
-      console.error('Error en findUserById:', error);
-      throw new Error(`Error al buscar usuario por ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
+  // Método para generar el token JWT
   generateToken(userId: string): string {
-    return jwt.sign(
-      { userId },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRATION || '24h' }
-    );
+    try {
+      return jwt.sign(
+        { userId },
+        process.env.JWT_SECRET!,
+        { expiresIn: process.env.JWT_EXPIRATION || '24h' }
+      );
+    } catch (error) {
+      console.error('Error generando token:', error);
+      throw new Error('Error al generar el token');
+    }
   }
 }
